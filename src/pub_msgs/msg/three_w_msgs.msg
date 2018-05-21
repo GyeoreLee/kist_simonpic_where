@@ -1,0 +1,10 @@
+Header header
+int16 total
+geometry_msgs/Point32[] location
+sensor_msgs/RegionOfInterest[] roi
+std_msgs/String[] name
+std_msgs/String[] cam_id
+std_msgs/String[] id
+std_msgs/String[] gesture
+int16[] gentime
+float32[] facescore

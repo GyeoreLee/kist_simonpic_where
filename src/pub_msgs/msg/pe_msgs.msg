@@ -1,0 +1,10 @@
+Header header
+int16 total
+int16 phase
+std_msgs/String[] name
+std_msgs/String[] attitude
+std_msgs/String[] byPassEmergency
+geometry_msgs/Point32[] location
+int16[] focus
+int16[] score
+float32 totalClassScore
