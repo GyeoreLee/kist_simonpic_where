@@ -31,7 +31,9 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import scipy.io as sio
 
-import kr_tracker
+#import kr_tracker
+import imp
+
 
 # import gmphdROI as gmphdroi
 
@@ -104,6 +106,7 @@ class WhereFusion:
 
         # kr_tracker init
         self.object_filter = rospy.get_param('/FP_filter')
+	kr_tracker = imp.load_compiled("my_module","kr_tracker.pyc")
 
         if self.object_filter == False:
             self.tracking = kr_tracker.kr_tracker(30.)

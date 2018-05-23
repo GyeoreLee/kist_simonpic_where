@@ -38,7 +38,7 @@ import cv2
 #import lib for kalman tracking
 from math import * 
 import math
-import gmphd4 as gmphd
+#import gmphd4 as gmphd
 #import gmphdROI as gmphdroi
 import pickle
 
@@ -176,7 +176,7 @@ class HumanDetector_RGBD:
 		P0 = [[math.pow(sigma_p0, 2), 0, 0, 0], [0, math.pow(sigma_p0, 2), 0, 0], [0, 0, 0.01, 0], [0, 0, 0, 0.01]]
 		clutter_intensity = 0.0
 		self.born_components = []
-		self.f_gmphd = gmphd.GMPHD([], p_s, p_d, F, Q, H, R, P0, clutter_intensity, merge_thresh)
+		#self.f_gmphd = gmphd.GMPHD([], p_s, p_d, F, Q, H, R, P0, clutter_intensity, merge_thresh)
 		########################
 
 		self.isBusy = True

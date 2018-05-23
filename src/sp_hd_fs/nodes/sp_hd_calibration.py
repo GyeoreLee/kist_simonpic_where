@@ -18,12 +18,14 @@ from sklearn import mixture
 import itertools
 import time
 
+
 human_mutex = Lock()
-
-
 class WhereCalibration:
+
     # Calibration pair distance parameter
     CALIB_DIST = 1.0
+    # Number of pairs for calibration
+    SAMPLE_NUM = 2000
 
     def __init__(self):
 
@@ -48,18 +50,19 @@ class WhereCalibration:
         self.algorithm_working_time_end = []
         self.once_flag = False
 
-        # parameter recording table for validation and error complementation.
+        #parameter recording table for validation and error complementation.
         # row is std cam_id, column is target cam_id
-        self.parameter_table = [[[], [], [], []],
-                                [[], [], [], []],
-                                [[], [], [], []],
-                                [[], [], [], []]]
+        self.parameter_table = [[[],[],[],[]],
+                                [[],[],[],[]],
+                                [[],[],[],[]],
+                                [[],[],[],[]]]
 
         self.global_std_param = rospy.get_param('/psn_unit' + str(1))
-        self.global_parameter_table = [[self.global_std_param], [], [], []]
+        self.global_parameter_table = [[self.global_std_param],[],[],[]]
+
 
         # cam1 need to set always True because cam1's position is fixed.
-        self.calibrated_cam_table = [True, False, False, False]
+        self.calibrated_cam_table = [True, False, True, True]
 
         if self.object_filter == False:
             rospy.Subscriber("/sn_kinect/detector1", where_msgs, self.human_detector_callback, queue_size=1)
@@ -72,6 +75,7 @@ class WhereCalibration:
             rospy.Subscriber("/sn_kinect/detector_new2", where_msgs, self.human_detector_callback, queue_size=1)
             rospy.Subscriber("/sn_kinect/detector_new3", where_msgs, self.human_detector_callback, queue_size=1)
             rospy.Subscriber("/sn_kinect/detector_new4", where_msgs, self.human_detector_callback, queue_size=1)
+
 
         # ros topic for GUI Display
         self.calib_status_pub = rospy.Publisher("/camera_calibration_status", String, queue_size=1)
@@ -125,8 +129,9 @@ class WhereCalibration:
                 self.kinect4_dat = self.data_parsing(data)
                 self.kinect4_timer = rospy.get_time()
 
+
         # for Debug
-        # self.timer_callback()
+        #self.timer_callback()
 
         human_mutex.release()
 
@@ -145,15 +150,15 @@ class WhereCalibration:
 
         return transformed_location
 
-    def setRosParam(self, cam_id, std_cam_id, x_bias, z_bias, pitch):
+    def setRosParam(self,cam_id, std_cam_id ,x_bias, z_bias, pitch ):
 
         # load a previous target cam-position-RPY param
-        self.psn_unit_param = rospy.get_param('/psn_unit' + str(cam_id))
+        self.psn_unit_param = rospy.get_param('/psn_unit'+str(cam_id))
 
         # load a standard cam-position-RPY param which was used for calibration.
         std_coordinate_param = rospy.get_param('/psn_unit' + str(std_cam_id))
 
-        input_location = [x_bias, 0, z_bias]  # X, Y, X
+        input_location = [x_bias, 0, z_bias] # X, Y, X
         std_cam_param = std_coordinate_param
         std_cam_param[3] = 0
 
@@ -161,27 +166,27 @@ class WhereCalibration:
         transformed_location = self.CoordinateTransform(input_location, std_cam_param)
 
         # Rounding the param value
-        self.psn_unit_param[0] = round(transformed_location[0], 2)  # new camera X_bias
-        self.psn_unit_param[2] = round(transformed_location[2], 2)  # new camera Z_bias
-        self.psn_unit_param[4] = round(pitch + std_cam_param[4], 2)  # pitch
+        self.psn_unit_param[0] = round(transformed_location[0],2) # new camera X_bias
+        self.psn_unit_param[2] = round(transformed_location[2],2) # new camera Z_bias
+        self.psn_unit_param[4] = round(pitch + std_cam_param[4] ,2)  # pitch
 
         print 'local2std x_bias %.2f z_bias %.2f pitch %.2f degree' % (x_bias, z_bias, np.degrees(pitch))
-        print 'std_cam %d target_cam %d x_bias %.2f z_bias %.2f pitch %.2f degree' % (
-        std_cam_id, cam_id, self.psn_unit_param[0], self.psn_unit_param[2], np.degrees(self.psn_unit_param[4]))
+        print 'std_cam %d target_cam %d x_bias %.2f z_bias %.2f pitch %.2f degree'% (std_cam_id, cam_id, self.psn_unit_param[0], self.psn_unit_param[2], np.degrees(self.psn_unit_param[4]))
 
         # ROS-param setting for new one.
         rospy.set_param('/psn_unit' + str(cam_id), self.psn_unit_param)
-        self.calibrated_cam_table[cam_id - 1] = True
+        self.calibrated_cam_table[cam_id-1] = True
 
-    def setGlobalParam(self, cam_id, std_cam_id, x_bias, z_bias, pitch):
+    def setGlobalParam(self,cam_id, std_cam_id ,x_bias, z_bias, pitch ):
 
         # load a previous target cam-position-RPY param
-        self.psn_unit_param = rospy.get_param('/psn_unit' + str(cam_id))
+        self.psn_unit_param = rospy.get_param('/psn_unit'+str(cam_id))
 
         # load a standard cam-position-RPY param which was used for calibration.
-        std_coordinate_param = np.mean(np.asarray(self.global_parameter_table[std_cam_id - 1]), axis=0).tolist()
+        std_coordinate_param = np.mean(np.asarray(self.global_parameter_table[std_cam_id-1]), axis = 0).tolist()
 
-        input_location = [x_bias, 0, z_bias]  # X, Y, X
+
+        input_location = [x_bias, 0, z_bias] # X, Y, X
         std_cam_param = std_coordinate_param
         std_cam_param[3] = 0
 
@@ -189,34 +194,34 @@ class WhereCalibration:
         transformed_location = self.CoordinateTransform(input_location, std_cam_param)
 
         # Rounding the param value
-        self.psn_unit_param[0] = round(transformed_location[0], 2)  # new camera X_bias
-        self.psn_unit_param[2] = round(transformed_location[2], 2)  # new camera Z_bias
-        self.psn_unit_param[4] = round(pitch + std_cam_param[4], 2)  # pitch
+        self.psn_unit_param[0] = round(transformed_location[0],2) # new camera X_bias
+        self.psn_unit_param[2] = round(transformed_location[2],2) # new camera Z_bias
+        self.psn_unit_param[4] = round(pitch + std_cam_param[4] ,2)  # pitch
 
-        # print 'local2std x_bias %.2f z_bias %.2f pitch %.2f degree' % (x_bias, z_bias, np.degrees(pitch))
-        # print 'std_cam %d target_cam %d x_bias %.2f z_bias %.2f pitch %.2f degree'% (std_cam_id, cam_id, self.psn_unit_param[0], self.psn_unit_param[2], np.degrees(self.psn_unit_param[4]))
+        #print 'local2std x_bias %.2f z_bias %.2f pitch %.2f degree' % (x_bias, z_bias, np.degrees(pitch))
+        #print 'std_cam %d target_cam %d x_bias %.2f z_bias %.2f pitch %.2f degree'% (std_cam_id, cam_id, self.psn_unit_param[0], self.psn_unit_param[2], np.degrees(self.psn_unit_param[4]))
 
         # ROS-param setting for new one.
-        self.global_parameter_table[cam_id - 1].append(self.psn_unit_param)
+        self.global_parameter_table[cam_id-1].append(self.psn_unit_param)
 
     def plot_param(self, data, means):
         data_np = np.asarray(data)
         fig = plt.figure()
-        # plt.subplot(211)
+        #plt.subplot(211)
         ax = fig.gca(projection='3d')
-        ax.scatter(data_np.T[0], data_np.T[1], data_np.T[2])
+        ax.scatter(data_np.T[0],data_np.T[1],data_np.T[2])
         plt.hold()
-        ax.scatter(means.item(0), means.item(1), means.item(2), color='red')
-        # plt.subplot(234)
-        # plt.hist(data_np.T[0],10)
-        # plt.subplot(235)
-        # plt.hist(data_np.T[1],10)
-        # plt.subplot(236)
-        # plt.hist(data_np.T[2], 10)
+        ax.scatter(means.item(0), means.item(1), means.item(2), color = 'red')
+        #plt.subplot(234)
+        #plt.hist(data_np.T[0],10)
+        #plt.subplot(235)
+        #plt.hist(data_np.T[1],10)
+        #plt.subplot(236)
+        #plt.hist(data_np.T[2], 10)
 
         plt.show()
 
-    def calibration_callback(self, data):
+    def calibration_callback(self,data):
 
         ###### remove data that is not subscribed during 0.1 sec
         T_du = 0.1
@@ -230,6 +235,7 @@ class WhereCalibration:
         if rospy.get_time() - self.kinect4_timer > T_du:
             self.kinect4_dat = MultiPersons()
 
+
         ### append human_roi in each kinect
         allP = MultiPersons()
         allP.persons.extend(self.kinect1_dat.persons)
@@ -239,7 +245,8 @@ class WhereCalibration:
 
         # check unique person.
         camera_check = [0, 0, 0, 0]
-        detection_pos = [np.asarray([np.array([])]), np.asarray([]), np.asarray([]), np.asarray([])]
+        detection_pos = [np.asarray([np.array([])]),np.asarray([]),np.asarray([]),np.asarray([])]
+
 
         for person in allP.persons:
 
@@ -247,31 +254,35 @@ class WhereCalibration:
             if person.roi.do_rectify == False and self.object_filter == True:
                 continue
 
+
+
             if person.cam_id.data == 'sn_kinect1':
                 camera_check[0] += 1
-                detection_pos[0] = np.array([person.location.x, person.location.y, person.location.z])
+                detection_pos[0] = np.array([person.location.x,person.location.y, person.location.z])
 
             elif person.cam_id.data == 'sn_kinect2':
                 camera_check[1] += 1
-                detection_pos[1] = np.array([person.location.x, person.location.y, person.location.z])
+                detection_pos[1] = np.array([person.location.x,person.location.y, person.location.z])
 
             elif person.cam_id.data == 'sn_kinect3':
                 camera_check[2] += 1
-                detection_pos[2] = np.array([person.location.x, person.location.y, person.location.z])
+                detection_pos[2] = np.array([person.location.x,person.location.y, person.location.z])
 
             elif person.cam_id.data == 'sn_kinect4':
                 camera_check[3] += 1
-                detection_pos[3] = np.array([person.location.x, person.location.y, person.location.z])
+                detection_pos[3] = np.array([person.location.x,person.location.y, person.location.z])
 
         camera_check_np = np.asarray(camera_check)
 
+
         # Camera check status publish for GUI-Display
-        self.calib_status_pub.publish(str(camera_check) + '\n' + str(self.calibrated_cam_table))
+        self.calib_status_pub.publish(str(camera_check)+ '\n'+ str(self.calibrated_cam_table))
+        print self.calibrated_cam_table
 
         # Check whether the calibration is complete or incomplete.
-        if np.count_nonzero(np.asarray(self.calibrated_cam_table)) == 4:
+        if np.count_nonzero(np.asarray(self.calibrated_cam_table))==4:
 
-            # for cam_idx in range(len(camera_check)): # row target cam_idx
+            #for cam_idx in range(len(camera_check)): # row target cam_idx
 
             print 'calibration complete!'
             self.calib_message_pub.publish('calibration complete!')
@@ -279,20 +290,21 @@ class WhereCalibration:
                 str(camera_check) + '\n' + str(self.calibrated_cam_table))
             exit(1)
         else:
+            '''
             if self.once_flag == True:
-
                 self.algorithm_working_time_end = time.time()
                 duration = self.algorithm_working_time_end - self.algorithm_working_time_start
                 if duration > 10.:
-                    count_matrix = np.zeros((4, 4))
+                    count_matrix = np.zeros((4,4))
                     for i in range(4):
                         for j in range(4):
                             count_matrix[i][j] = len(self.parameter_table[i][j])
 
-                    # To set global calibration param. we start from cam1(std_cam)
+                    #To set global calibration param. we start from cam1(std_cam)
                     # Target selection
                     std_cam_idx = 0
-                    while (1):
+                    while(1):
+
 
                         target_cam_idx = count_matrix[:, std_cam_idx].argsort()[::-1][0]
                         tmp_index = 1
@@ -300,9 +312,11 @@ class WhereCalibration:
                         while (1):
                             if self.global_parameter_table[target_cam_idx]:
                                 target_cam_idx = count_matrix[:, std_cam_idx].argsort()[::-1][tmp_index]
-                                tmp_index = tmp_index + 1
+                                tmp_index = tmp_index +1
                             else:
                                 break
+
+
 
                         if self.calibrated_cam_table[std_cam_idx] == True:
                             if self.calibrated_cam_table[target_cam_idx] == False:
@@ -313,8 +327,7 @@ class WhereCalibration:
                                 z_bias = gmm.means_.item(1)
                                 pitch = gmm.means_.item(2)
 
-                                #self.setRosParam(target_idx + 1, std_idx + 1, x_bias, z_bias, pitch)
-                                self.setRosParam(target_cam_idx + 1, std_cam_idx + 1, x_bias, z_bias, pitch)
+                                self.setRosParam(target_idx + 1, std_idx + 1, x_bias, z_bias, pitch)
                                 std_cam_idx = target_cam_idx
                                 continue
 
@@ -337,16 +350,26 @@ class WhereCalibration:
                             z_bias = gmm.means_.item(1)
                             pitch = gmm.means_.item(2)
 
-                            #self.setRosParam(target_idx + 1, std_idx + 1, x_bias, z_bias, pitch)
-                            self.setRosParam(target_cam_idx + 1, std_cam_idx + 1, x_bias, z_bias, pitch)
+                            self.setRosParam(target_idx + 1, std_idx + 1, x_bias, z_bias, pitch)
                             std_cam_idx = target_cam_idx
 
             '''
+
+
+
+
             for target_idx in range(len(self.parameter_table)):
                 for std_idx in range(len(self.parameter_table[target_idx])):
+
                     # Update using multi-parmeter sample.
-                    if len(self.parameter_table[target_idx][std_idx]) > 200 \
-                            and self.calibrated_cam_table[target_idx] == False:
+                    if len(self.parameter_table[target_idx][std_idx]) > self.SAMPLE_NUM \
+                            and self.calibrated_cam_table[target_idx] == False\
+                            and self.calibrated_cam_table[std_idx] == True:
+                        count_matrix = np.zeros((4, 4))
+                        for i in range(4):
+                            for j in range(4):
+                                count_matrix[i][j] = len(self.parameter_table[i][j])
+                        print count_matrix
                         print 'Enough stored! target : %d std : %d' %(target_idx+1, std_idx+1)
                         gmm = mixture.GaussianMixture(n_components=1, covariance_type='full')
                         gmm.fit(self.parameter_table[target_idx][std_idx])
@@ -354,17 +377,21 @@ class WhereCalibration:
                         z_bias = gmm.means_.item(1)
                         pitch = gmm.means_.item(2)
                         self.setRosParam(target_idx + 1, std_idx + 1, x_bias, z_bias, pitch)
-                        #    #self.plot_param(self.parameter_table[2][0],gmm.means_)
+                        continue
+                        #self.plot_param(self.parameter_table[2][0],gmm.means_)
+                    #else:
+                    #    print 'lack of pair std : %d target : %d pairs : %d '%(
+                    #        target_idx+1, std_idx+1,len(self.parameter_table[target_idx][std_idx]))
 
-            '''
+            
+
 
         # Calibration condition violation
-        print self.calibrated_cam_table
         print camera_check
         if (camera_check_np > 1).any():
             print 'unique person fail!\n'
             self.calib_message_pub.publish('unique person fail!')
-            # print camera_check
+            #print camera_check
             self.person_trajectory = []
 
         elif (camera_check_np == 0).all():
@@ -376,13 +403,13 @@ class WhereCalibration:
             print 'psn_off(Only one camera has a detection.)'
             self.calib_message_pub.publish('Only one camera has a detection.')
 
-            # print camera_check
+            #print camera_check
             self.person_trajectory = []
 
         # Calibration Algorithm work!
         else:
-            # print 'condition satisified!'
-            # print camera_check
+            #print 'condition satisified!'
+            #print camera_check
 
             # At the first time, trajectory is empty
             if not self.person_trajectory:
@@ -392,22 +419,23 @@ class WhereCalibration:
             # Calibration algorithm is working here!
             else:
                 self.person_trajectory.append(detection_pos)
-                # print 'seq of trajectory : ', len(self.person_trajectory)
+                #print 'seq of trajectory : ', len(self.person_trajectory)
                 self.calib_message_pub.publish('Calibrationing...')
 
                 # Searching position distance from current frame to previous frame.
-                for trajectory_seq_index in range(len(self.person_trajectory) - 1, 0, -1):
+                for trajectory_seq_index in range(len(self.person_trajectory)-1,0,-1):
 
-                    current_position = np.asarray(self.person_trajectory[len(self.person_trajectory) - 1])
-                    searching_position = np.asarray(self.person_trajectory[trajectory_seq_index - 1])
+                    current_position = np.asarray(self.person_trajectory[len(self.person_trajectory)-1])
+                    searching_position = np.asarray(self.person_trajectory[trajectory_seq_index-1])
+
 
                     # Find the distance between detections in the matching camera.
                     position_diff = np.empty([4, 3])
                     for cam_index in range(len(current_position)):
                         if current_position[cam_index].any() & searching_position[cam_index].any():
                             position_diff[cam_index] = current_position[cam_index] - searching_position[cam_index]
-                        else:
-                            position_diff[cam_index] = np.array([0, 0, 0])
+                        else :
+                            position_diff[cam_index] = np.array([0,0,0])
 
                     position_diff_square = np.square(position_diff)
 
@@ -418,8 +446,9 @@ class WhereCalibration:
                         else:
                             distance.append(0.)
 
+
                     # Calibration Algorithm Start.00000000000000000000000000000000000000000000000000000 nm.0
-                    if np.count_nonzero(np.asarray(distance) > self.CALIB_DIST) >= 2:
+                    if np.count_nonzero(np.asarray(distance) > self.CALIB_DIST) >=2 :
                         if self.once_flag == False:
                             self.algorithm_working_time_start = time.time()
                             self.once_flag = True
@@ -427,12 +456,13 @@ class WhereCalibration:
                         #print 'distance : %.2f %.2f %.2f %.2f' % (distance[0], distance[1], distance[2], distance[3])
                         trajectory_substract = position_diff
 
-                        substract_matrix = np.zeros((2, 2))
-                        '''substract_matrix
 
+                        substract_matrix = np.zeros((2,2))
+                        '''substract_matrix
+                        
                         a   b     standard_cam_position_diff
                         a'  b'    other_cam_position_diff
-
+                        
                         '''
 
                         # camera loop
@@ -442,8 +472,10 @@ class WhereCalibration:
                         '''
                         std_cam_check = False
                         target_cam_check = False
+
                         for cam_data in trajectory_substract:
                             if (np.asarray(distance) > self.CALIB_DIST)[i]:
+
                                 # already calibrated camera, this cam will be standard cam.
                                 if self.calibrated_cam_table[i]:
                                     substract_matrix[0] = cam_data[0::2] # a, b
@@ -451,16 +483,19 @@ class WhereCalibration:
                                     i = i + 1
                                     std_cam_check = True
                                     continue
+
                                 # not calibrated camera, this cam will be target cam.
                                 else:
                                     substract_matrix[1] = cam_data[0::2] # a' ,b'
                                     target_cam_idx = i
                                     i = i + 1
+
                                     target_cam_check = True
                                     continue
                             else:
                                 #
                                 i = i+1
+                        
 
                         # condition check!
                         if std_cam_check == False or target_cam_check == False:
@@ -468,26 +503,25 @@ class WhereCalibration:
                             break
                         '''
 
-                        permutation_result = itertools.permutations(np.where(np.asarray(distance) > self.CALIB_DIST)[0],
-                                                                    2)
+                        permutation_result = itertools.permutations(np.where(np.asarray(distance)>self.CALIB_DIST)[0],2)
 
                         for (std_cam_idx, target_cam_idx) in permutation_result:
                             substract_matrix[0] = trajectory_substract[std_cam_idx][0::2]  # a, b
                             substract_matrix[1] = trajectory_substract[target_cam_idx][0::2]  # a' ,b'
 
-                            [a, b], [a_, b_] = substract_matrix
+                            [a ,b] , [a_, b_] = substract_matrix
 
                             if a >= 0:
                                 theta1 = np.arctan2(b, a)
                                 theta2 = np.arctan2(b_, a_)
-                            else:
+                            else :
                                 theta1 = np.arctan2(b, a) + np.pi
-                                theta2 = np.arctan2(b_, a_) + np.pi
+                                theta2 = np.arctan2(b_,a_) + np.pi
 
                             # resolve pitch value
                             pitch = theta1 - theta2
-                            if pitch < 0:
-                                pitch = pitch + 2 * np.pi
+                            if pitch < 0 :
+                                pitch = pitch + 2*np.pi
 
                             # resolve transform_matrix
                             Transform_mat = np.matrix([[np.cos(pitch), -np.sin(pitch)],
@@ -495,32 +529,40 @@ class WhereCalibration:
 
                             # parameter result from point1
                             result1 = np.asmatrix(current_position[std_cam_idx][0::2]).T \
-                                      - Transform_mat * np.asmatrix(current_position[target_cam_idx][0::2]).T
+                                 - Transform_mat*np.asmatrix(current_position[target_cam_idx][0::2]).T
 
                             # parameter result from point2
                             result2 = np.asmatrix(searching_position[std_cam_idx][0::2]).T \
                                       - Transform_mat * np.asmatrix(searching_position[target_cam_idx][0::2]).T
 
-                            x_bias = (result1.item(0) + result2.item(0)) / 2.
-                            z_bias = (result1.item(1) + result2.item(1)) / 2.
 
-                            # record calibration parameter
+
+                            x_bias = (result1.item(0) + result2.item(0))/2.
+                            z_bias = (result1.item(1) + result2.item(1))/2.
+
+                            #record calibration parameter
                             #                   target_cam_id
                             self.parameter_table[target_cam_idx][std_cam_idx].append([x_bias, z_bias, pitch])
 
                             # calibration_target_cam, standard_cam, x_bias, z_bias, pitch
-                            # self.setRosParam(target_cam_idx+1, std_cam_idx+1 ,x_bias, z_bias, pitch)
-                            # break
+                            #self.setRosParam(target_cam_idx+1, std_cam_idx+1 ,x_bias, z_bias, pitch)
+                        #break
 
             # For step-by-step calibration from cam1 -> cam3 -> etc
             # Unnecessary
             '''
             elif (~np.asarray(detection_pos[0]).any()) & (
                 np.count_nonzero(np.asarray(self.calibrated_cam_table)) == 1):
+
                 self.person_trajectory = []
                 print 'default calibration failed! go to camera1 view sight!'
                 self.calib_message_pub.publish('go to camera1 view sight!!')
             '''
+
+
+
+
+
 
 
 if __name__ == '__main__':
