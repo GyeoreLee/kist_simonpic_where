@@ -23,9 +23,9 @@ human_mutex = Lock()
 class WhereCalibration:
 
     # Calibration pair distance parameter
-    CALIB_DIST = 1.0
+    CALIB_DIST = 0.7
     # Number of pairs for calibration
-    SAMPLE_NUM = 2000
+    SAMPLE_NUM = 1000
 
     def __init__(self):
 

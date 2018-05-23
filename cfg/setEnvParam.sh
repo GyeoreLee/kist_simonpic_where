@@ -1,6 +1,6 @@
 echo "set /psn_unit" 
 rosparam set /psn_unit1 "[-0.92, 2.37, 0.0, 0.35, 0.0, 0.0]"
-rosparam set /psn_unit2 "[0.81, 2.37, -0.23, 0.35, 6.29, 0.0]"
+rosparam set /psn_unit2 "[0.92, 2.37, 0.0, 0.35, 0.0, 0.0]"
 rosparam set /psn_unit3 "[ -2.41, 2.37, 2.47, 0.35, -0.34, 0.0]"
 rosparam set /psn_unit4 "[2.52, 2.37, 3.42, 0.35, 2.14, 0.0]"
 

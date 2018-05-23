@@ -44,6 +44,7 @@ fusion_mutex = Lock()
 publish_score_TH = 30.
 vel_max = 0.
 
+PATH = os.path.dirname(os.path.abspath(__file__))
 
 def CoordinateTransform(loc, psn_pose):
     rot = PyKDL.Rotation.EulerZYX(psn_pose[5], -psn_pose[4], psn_pose[3])
@@ -106,7 +107,7 @@ class WhereFusion:
 
         # kr_tracker init
         self.object_filter = rospy.get_param('/FP_filter')
-	kr_tracker = imp.load_compiled("my_module","kr_tracker.pyc")
+	kr_tracker = imp.load_compiled("my_module",PATH + "/kr_tracker.pyc")
 
         if self.object_filter == False:
             self.tracking = kr_tracker.kr_tracker(30.)
@@ -616,14 +617,14 @@ class WhereFusion:
         # Camera Position
         cv2.putText(cv_image, '+', (szH + OffX1 + text_offset, OffZ1 + margin), font, 0.5, (0, 0, 255), 2)  # kinect1
         cv2.putText(cv_image, '+', (szH + OffX2 + text_offset, OffZ2 + margin), font, 0.5, (0, 0, 255), 2)  # kinect2
-        cv2.putText(cv_image, '+', (szH + OffX3 + text_offset, OffZ3 + margin), font, 0.6, (0, 0, 255), 2)  # kinect3
-        cv2.putText(cv_image, '+', (szH + OffX4 + text_offset, OffZ4 + margin), font, 0.6, (0, 0, 255), 2)  # kinect4
+        #cv2.putText(cv_image, '+', (szH + OffX3 + text_offset, OffZ3 + margin), font, 0.6, (0, 0, 255), 2)  # kinect3
+        #cv2.putText(cv_image, '+', (szH + OffX4 + text_offset, OffZ4 + margin), font, 0.6, (0, 0, 255), 2)  # kinect4
 
         # each kinect camera text
         cv2.putText(cv_image, 'K1', (szH + OffX1 + 15, OffZ1 + margin + 12), font, Fscale, colorcode[0], 2)
         cv2.putText(cv_image, 'K2', (szH + OffX2 + 15, OffZ2 + margin + 12), font, Fscale, colorcode[1], 2)
-        cv2.putText(cv_image, 'K3', (szH + OffX3 + 15, OffZ3 + margin + 12), font, Fscale, colorcode[2], 2)
-        cv2.putText(cv_image, 'K4', (szH + OffX4 + 15, OffZ4 + margin + 12), font, Fscale, colorcode[3], 2)
+        #cv2.putText(cv_image, 'K3', (szH + OffX3 + 15, OffZ3 + margin + 12), font, Fscale, colorcode[2], 2)
+        #cv2.putText(cv_image, 'K4', (szH + OffX4 + 15, OffZ4 + margin + 12), font, Fscale, colorcode[3], 2)
 
         '''plot sensor range'''
         HFOV = 58.0
@@ -671,16 +672,16 @@ class WhereFusion:
                  colorcode[1], 1)  # right-line
 
         # kinect3 sensor range
-        cv2.line(cv_image, (szH + OffX3, OffZ3 + margin), (szH + OffX3 + Xin3_left, OffZ3 + margin + Zin3_left),
-                 colorcode[2], 1)  # left-line
-        cv2.line(cv_image, (szH + OffX3, OffZ3 + margin), (szH + OffX3 + Xin3_right, OffZ3 + margin + Zin3_right),
-                 colorcode[2], 1)  # right-line
+        #cv2.line(cv_image, (szH + OffX3, OffZ3 + margin), (szH + OffX3 + Xin3_left, OffZ3 + margin + Zin3_left),
+        #         colorcode[2], 1)  # left-line
+        #cv2.line(cv_image, (szH + OffX3, OffZ3 + margin), (szH + OffX3 + Xin3_right, OffZ3 + margin + Zin3_right),
+        #         colorcode[2], 1)  # right-line
 
         # kinect4 sensor range
-        cv2.line(cv_image, (szH + OffX4, OffZ4 + margin), (szH + OffX4 + Xin4_left, OffZ4 + margin + Zin4_left),
-                 colorcode[3], 1)  # left-line
-        cv2.line(cv_image, (szH + OffX4, OffZ4 + margin), (szH + OffX4 + Xin4_right, OffZ4 + margin + Zin4_right),
-                 colorcode[3], 1)  # right-line
+        #cv2.line(cv_image, (szH + OffX4, OffZ4 + margin), (szH + OffX4 + Xin4_left, OffZ4 + margin + Zin4_left),
+        #         colorcode[3], 1)  # left-line
+        #cv2.line(cv_image, (szH + OffX4, OffZ4 + margin), (szH + OffX4 + Xin4_right, OffZ4 + margin + Zin4_right),
+        #         colorcode[3], 1)  # right-line
 
         '''
         # 1
