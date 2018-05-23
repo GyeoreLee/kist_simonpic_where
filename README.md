@@ -20,9 +20,9 @@ sHRI-Lab : Sensor Network In-Motion Perception In-Clouds
 
 
 
-## 1. Getting Started
+## 2. Getting Started
 
-### 1.1 Requirements
+### 2.1 Requirements
 
 - 파이썬 의존 패키지 설치 : munkres scipy sklearn numpy PyKDL matplotlib
     ```
